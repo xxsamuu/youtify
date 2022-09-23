@@ -18,7 +18,7 @@ load_dotenv()
 class YoutubeStuff:
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
     flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        "YOUR_CLIENT_SECRET_FILE.json", "https://www.googleapis.com/auth/youtube.force-ssl")
+        "/home/kali/youtify/backend/YOUR_CLIENT_SECRET_FILE.json", "https://www.googleapis.com/auth/youtube.force-ssl")
     def __init__(self):
         #create a user when getting access to their account
         self.user = googleapiclient.discovery.build(
@@ -29,7 +29,6 @@ class YoutubeStuff:
         Automatically creates a playlist on users youtube, after getting permission via authorization pop-up.
         Default title should be the spotify playlist's one, but give possibility to change it manually
         '''
-        print(f"title: {title}, description: {description}")
         status.get_status("creating playlist...")
         makeRequest = self.user.playlists().insert(
             part="snippet,status, id",

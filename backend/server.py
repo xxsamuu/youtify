@@ -10,7 +10,7 @@ from flask import Response
 
 
 app = Flask('__name__', static_folder='./frontend/build', static_url_path='')
-cors = CORS(app)
+cors = CORS(app) 
 
 status = GetStatus()
 
@@ -19,7 +19,12 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 youtube_user = ''
 spotify_user = ''
 
-@app.route('/main',methods=['GET', 'POST'])
+@app.route('/api/hello', methods=['GET'])
+@cross_origin()
+def hello():
+  return 'hello'
+
+@app.route('/api/main',methods=['GET', 'POST'])
 @cross_origin()
 def main():
   """returns data about the playlist, such as: title, description, id.
@@ -95,7 +100,6 @@ def getDefault(data):
       status.get_status(f"getting the default value of {item}...")
       default = ''
       if data['originApp'] == 'spotify':
-        print(data)
         default = SpotifyStuff.getDefaultValues(data['playlistLink'], item)
       else:
         default = youtube_user.getDefaultValues(data['playlistLink'], item)
@@ -105,7 +109,7 @@ def getDefault(data):
   return dataChecked
 
 
-@app.route('/check-validity', methods=['POST'])
+@app.route('/api/check-validity', methods=['POST'])
 @cross_origin()
 def check_validity():
   """
@@ -128,7 +132,7 @@ def check_validity():
   
     
 
-@app.route('/get-status', methods=['GET', 'POST'])
+@app.route('/api/get-status', methods=['GET', 'POST'])
 @cross_origin()
 def get_status():
   if status.fatal == True:
@@ -141,7 +145,7 @@ def get_status():
     }
   })
 
-@app.route('/getplaylists-spotify',methods=['GET','POST'])
+@app.route('/api/getplaylists-spotify',methods=['GET','POST'])
 @cross_origin()
 def authenticate_spotify():
   status.get_status("getting user's data...")
@@ -150,7 +154,7 @@ def authenticate_spotify():
   data = spotify_user.get_users_playlists(status)
   return jsonify(data)
 
-@app.route('/getplaylists-youtube', methods=['GET', 'POST'])
+@app.route('/api/getplaylists-youtube', methods=['GET', 'POST'])
 @cross_origin()
 def authenticate_youtube():
   status.get_status("getting youtube playlists...")

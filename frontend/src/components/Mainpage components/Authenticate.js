@@ -33,7 +33,7 @@ const Authenticate = ({ inputRef, seterror, error, setisLoading }) => {
   }, []);
 
   async function getStatus() {
-    fetch("/get-status")
+    fetch("http://localhost:5000/api/get-status")
       .then((res) => res.json())
       .then((data) => {
         console.log(data);
@@ -47,7 +47,7 @@ const Authenticate = ({ inputRef, seterror, error, setisLoading }) => {
     intervalId = setInterval(() => {
       getStatus();
     }, 1000);
-    fetch(`getplaylists-${originApp}`)
+    fetch(`http://localhost:5000/api/getplaylists-${originApp}`)
       .then((res) => res.json())
       .then((data) => {
         clearInterval(intervalId);

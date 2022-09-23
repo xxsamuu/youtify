@@ -9,21 +9,19 @@ import spotipy.util as util
 
 from dotenv import load_dotenv
 
-from secure_api_tokens import Cryptography
 
 from get_status import GetStatus
 
 
 load_dotenv()
 
-secure = Cryptography()
         
 class SpotifyStuff:
     try:
         os.environ['SPOTIPY_CLIENT_ID'] = os.getenv('SPOTIPY_CLIENT_ID')
         os.environ['SPOTIPY_CLIENT_SECRET'] = os.getenv('SPOTIPY_CLIENT_SECRET')
     except:
-        print('having some trouble getting "env" variables for client_secret and client_id')
+        pass
     scope=['playlist-modify-public', 'playlist-modify-private', 'playlist-read-private', 'ugc-image-upload']
     
     auth = SpotifyOAuth(
@@ -33,7 +31,6 @@ class SpotifyStuff:
 
 
     def __init__(self):
-        print('__init__ called')
         #create a user when getting access to their account
         self.user = spotipy.Spotify(auth_manager=self.auth)
 
@@ -69,7 +66,6 @@ class SpotifyStuff:
                     self.user.playlist_upload_cover_image(playlist['id'], thumbnail)
                 except:
                     status.error_msg("invalid image selected, setting the default one...", False)
-                    print('invalid image')
 
             return {
                 "playlistName": playlist['name'],
@@ -130,7 +126,6 @@ class SpotifyStuff:
     def check_validity(self, link):
         try:
             self.user.playlist(link)
-            print("got playlist in spotify checker")
             return 200
         except:
             return 404
@@ -139,7 +134,6 @@ class SpotifyStuff:
     def get_tracks_name(cls, link):
         credentials = SpotifyClientCredentials()
         sp = spotipy.Spotify(auth_manager=credentials)
-        print(sp.playlist(link)['name'])
         array_data = sp.playlist_tracks(link)['items']
         array_names = []
         for track in array_data:

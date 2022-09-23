@@ -25,7 +25,7 @@ const Configure = ({
     intervalId = setInterval(() => {
       getStatus();
     }, 1000);
-    fetch("http://localhost:5000/main", {
+    fetch("http://localhost:5000/api/main", {
       method: "POST",
       body: JSON.stringify({
         name,
@@ -52,7 +52,7 @@ const Configure = ({
   }
 
   async function getStatus() {
-    fetch("http://localhost:5000/get-status")
+    fetch("http://localhost:5000/api/get-status")
       .then((res) => res.json())
       .then((data) => {
         setmessage(data.msg);
