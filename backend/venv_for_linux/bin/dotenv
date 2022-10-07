@@ -1,4 +1,4 @@
-#!/home/kali/youtify/backend/venv_for_linux/bin/python3
+#!/home/sam/youtify/backend/venv_for_linux/bin/python3.9
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -1,3 +1,5 @@
 /__pycache__
 
 .env
+./config
+./code/YOUR_CLIENT_SECRET_FILE.json
