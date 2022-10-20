@@ -1,0 +1,14 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: server-youtify
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile-client
+    image: frontend-youtify
+    ports:
+      - "3000:80"
+

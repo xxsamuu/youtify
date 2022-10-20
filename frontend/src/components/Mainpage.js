@@ -3,7 +3,7 @@ import Configure from "./Configure";
 import Authenticate from "./Mainpage components/Authenticate";
 import { Context } from "../Context";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import "font-awesome/css/font-awesome.min.css";
+//import "font-awesome/css/font-awesome.min.css";
 import { faSpotify } from "@fortawesome/free-brands-svg-icons";
 const Mainpage = ({ setsuccess, seterror, error, setisLoading, isLoading }) => {
   const {

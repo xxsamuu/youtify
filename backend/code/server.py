@@ -19,6 +19,11 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 youtube_user = ''
 spotify_user = ''
 
+@app.route("/api/hello", methods=['GET', 'POST'])
+@cross_origin()
+def hello():
+  return 'hello'
+
 @app.route('/api/main',methods=['GET', 'POST'])
 @cross_origin()
 def main():
@@ -160,6 +165,5 @@ def authenticate_youtube():
   return jsonify(data)
 
 if __name__ == "__main__":
-    app.run()
-    # main()
+   app.run(host='0.0.0.0')
 

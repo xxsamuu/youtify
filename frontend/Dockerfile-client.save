@@ -1,0 +1,21 @@
+FROM node:16.10.0 as build-step
+WORKDIR /youtify/frontend
+ENV PATH /youtify/frontend/node_modules/.bin:$PATH
+COPY package.json package-lock.json ./
+COPY ./src ./src
+COPY ./public ./public
+RUN yarn install
+RUN npm run
+RUN npm install react-scripts
+RUN yarn add @fortawesome/react-fontawesome
+RUN yarn build
+
+FROM nginx:stable-alpine 
+COPY --from=build-step /youtify/frontend/build /usr/share/nginx/html
+COPY deployement/nginx.default.conf /etc/nginx/conf.d/default.conf
+
+
+
+
+
+
