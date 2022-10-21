@@ -33,7 +33,7 @@ const Authenticate = ({ inputRef, seterror, error, setisLoading }) => {
   }, []);
 
   async function getStatus() {
-    fetch("http://localhost:5000/api/get-status")
+    fetch("https://youtify-api.onrender.com/api/get-status")
       .then((res) => res.json())
       .then((data) => {
         console.log(data);
@@ -47,7 +47,7 @@ const Authenticate = ({ inputRef, seterror, error, setisLoading }) => {
     intervalId = setInterval(() => {
       getStatus();
     }, 1000);
-    fetch(`http://localhost:5000/api/getplaylists-${originApp}`)
+    fetch(`https://youtify-api.onrender.com/api/getplaylists-${originApp}`)
       .then((res) => res.json())
       .then((data) => {
         clearInterval(intervalId);

@@ -53,7 +53,7 @@ const Mainpage = ({ setsuccess, seterror, error, setisLoading, isLoading }) => {
     Returns status 200 if success and 404 for not found.
     */
     setOriginApp(originApp);
-    fetch("/api/check-validity", {
+    fetch("https://youtify-api.onrender.com/api/check-validity", {
       method: "POST",
       body: JSON.stringify({ playlistLink, originApp }),
     }).then((res) => {
