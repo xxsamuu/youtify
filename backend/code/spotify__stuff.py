@@ -36,24 +36,27 @@ class SpotifyStuff:
 
 
     def get_users_playlists(self, status):
-        playlists = self.user.current_user_playlists(50)
-        data = []
-        for i, playlist in enumerate(playlists['items']):
-            status.get_status(f"getting playlists...({round((i / len(playlists['items'])) * 100)}%)")
-            playlist_id = playlist['id']
-            playlist_data = {
-                "playlist_name": playlist['name'],
-                "playlist_url": playlist['external_urls']['spotify'],
-                "id": playlist_id,
-                "image": self.user.playlist_cover_image(playlist_id)
-            }
-            if len(playlist_data['image']) == 0:
-                #if playlist has no image, it's empty.
-                continue
-            else:
-                data.append(playlist_data)
-        status.get_status("")
-        return data
+        if self.user:
+            playlists = self.user.current_user_playlists(50)
+            data = []
+            for i, playlist in enumerate(playlists['items']):
+                status.get_status(f"getting playlists...({round((i / len(playlists['items'])) * 100)}%)")
+                playlist_id = playlist['id']
+                playlist_data = {
+                    "playlist_name": playlist['name'],
+                    "playlist_url": playlist['external_urls']['spotify'],
+                    "id": playlist_id,
+                    "image": self.user.playlist_cover_image(playlist_id)
+                }
+                if len(playlist_data['image']) == 0:
+                    #if playlist has no image, it's empty.
+                    continue
+                else:
+                    data.append(playlist_data)
+            status.get_status("")
+            return data
+        else:
+            return self.user
 
     def createPlaylist(self, title, description,status,  thumbnail  ):
         status.get_status("creating spotify playlist...")

@@ -131,30 +131,33 @@ class YoutubeStuff:
             return None
 
     def get_yt_playlists(self, status):
-        request = self.user.playlists().list(
-            part="snippet, id",
-            maxResults=50,
-            mine=True
-        )
+        if self.user:
+            request = self.user.playlists().list(
+                part="snippet, id",
+                maxResults=50,
+                mine=True
+            )
 
-        response = request.execute()
+            response = request.execute()
 
-        playlists_data = []
+            playlists_data = []
 
-        for i,playlist in enumerate(response["items"]):
-            status.get_status(f"getting playlists...({round((i/ len(response['items'])) * 100)}%)")
-            data = {
-                "playlist_name": playlist["snippet"]["title"],
-                "playlist_url": f"https://www.youtube.com/playlist?list={playlist['id']}",
-                "id": playlist["id"],
-                "image": playlist["snippet"]["thumbnails"]["default"]["url"]
-            }
-            if data["image"] == '[]':
-                pass
-            else:
-                playlists_data.append(data)
+            for i,playlist in enumerate(response["items"]):
+                status.get_status(f"getting playlists...({round((i/ len(response['items'])) * 100)}%)")
+                data = {
+                    "playlist_name": playlist["snippet"]["title"],
+                    "playlist_url": f"https://www.youtube.com/playlist?list={playlist['id']}",
+                    "id": playlist["id"],
+                    "image": playlist["snippet"]["thumbnails"]["default"]["url"]
+                }
+                if data["image"] == '[]':
+                    pass
+                else:
+                    playlists_data.append(data)
 
-        return playlists_data
+            return playlists_data
+        else:
+            return self.user
 
     def getDefaultValues(self, playlist_id, item):
         if item != "thumbnail":

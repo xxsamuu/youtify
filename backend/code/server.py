@@ -10,7 +10,7 @@ from flask import Response
 
 
 app = Flask('__name__', static_folder='./frontend/build', static_url_path='')
-cors = CORS(app) 
+cors = CORS(app)
 
 status = GetStatus()
 
@@ -29,7 +29,7 @@ def hello():
 def main():
   """returns data about the playlist, such as: title, description, id.
   need playlist url passed in as paramater to the backend.
-  need to add condition to check if playlist is converted from youtube to spotify or other way around. 
+  need to add condition to check if playlist is converted from youtube to spotify or other way around.
   """
   data  = request.get_json(force=True)
   origin_app = data['originApp']
@@ -40,23 +40,49 @@ def main():
   user = ''
 
   if origin_app == 'spotify':
-    global youtube_user
-    if youtube_user == '':
-      youtube_user = YoutubeStuff()
-    user = youtube_user
+    user = authentication_handler('youtube')
   else:
-    global spotify_user
-    if spotify_user == '':
-      spotify_user = SpotifyStuff()
-    user = spotify_user
+    user = authentication_handler('spotify')
 
-  return convert_handler(data, user)
-  
+  if user is not None:
+    return convert_handler(data, user)
+  else:
+    return 'user not authenticated'
+
+
+def authentication_handler(origin_app):
+  user = ''
+  retries = 0
+
+  if retries <= 3:
+    if origin_app == 'youtube':
+      global youtube_user
+      if youtube_user == '':
+        youtube_user = YoutubeStuff()
+      user = youtube_user
+
+    else:
+      global spotify_user
+      if spotify_user == '':
+        spotify_user = SpotifyStuff()
+      user = spotify_user
+
+    if not len(user):
+      retries += 1
+      authentication_handler(origin_app)
+
+    status.get_status("authenticated successfully!")
+    return user
+
+  else:
+    status.error_msg("having some trouble authenticating.", True)
+    return None
+
 
 def convert_handler(data, user):
   '''
-  based on the user passed in (spotify/youtube) it creates and add 
-  tracks to playlist. Returns informations about the playlist and the 
+  based on the user passed in (spotify/youtube) it creates and add
+  tracks to playlist. Returns informations about the playlist and the
   tracks in it.
   '''
   global youtube_user
@@ -94,7 +120,7 @@ def getDefault(data):
     user = spotify_user
   else:
     user = youtube_user
-    
+
   for item in data:
     if not data[item]:
       status.get_status(f"getting the default value of {item}...")
@@ -129,8 +155,8 @@ def check_validity():
       youtube_user = YoutubeStuff()
     val = youtube_user.check_validity(link)
   return Response(status=val)
-  
-    
+
+
 
 @app.route('/api/get-status', methods=['GET', 'POST'])
 @cross_origin()
@@ -149,8 +175,7 @@ def get_status():
 @cross_origin()
 def authenticate_spotify():
   status.get_status("getting user's data...")
-  global spotify_user
-  spotify_user = SpotifyStuff()
+  spotify_user = authentication_handler('spotify')
   data = spotify_user.get_users_playlists(status)
   return jsonify(data)
 
@@ -158,9 +183,7 @@ def authenticate_spotify():
 @cross_origin()
 def authenticate_youtube():
   status.get_status("getting youtube playlists...")
-  global youtube_user
-  if youtube_user == '':
-    youtube_user = YoutubeStuff()
+  youtube_user = authentication_handler("youtube")
   data = youtube_user.get_yt_playlists(status)
   return jsonify(data)
 
