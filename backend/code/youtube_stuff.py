@@ -18,7 +18,7 @@ load_dotenv()
 class YoutubeStuff:
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
     flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        "./YOUR_CLIENT_SECRET_FILE.json", "https://www.googleapis.com/auth/youtube.force-ssl")
+        "backend\code\YOUR_CLIENT_SECRET_FILE.json", "https://www.googleapis.com/auth/youtube.force-ssl")
     def __init__(self):
         #create a user when getting access to their account
         self.user = googleapiclient.discovery.build(
@@ -132,7 +132,6 @@ class YoutubeStuff:
             return None
 
     def get_yt_playlists(self, status):
-        if self.user:
             request = self.user.playlists().list(
                 part="snippet, id",
                 maxResults=50,
@@ -157,8 +156,6 @@ class YoutubeStuff:
                     playlists_data.append(data)
 
             return playlists_data
-        else:
-            return self.url
 
     def getDefaultValues(self, playlist_id, item):
         if item != "thumbnail":
