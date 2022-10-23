@@ -6,7 +6,7 @@ import time
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 
-from flask import jsonify
+from flask import redirect, jsonify
 
 from dotenv import load_dotenv
 
@@ -22,7 +22,8 @@ class YoutubeStuff:
     def __init__(self):
         #create a user when getting access to their account
         self.user = googleapiclient.discovery.build(
-            "youtube", "v3", credentials=self.flow.run_local_server(), num_retries=3, always_use_jwt_access=True)
+            "youtube", "v3", credentials=self.flow.run_local_server())
+        self.url = self.flow.authorization_url()
 
     def createPlaylist(self, title, description, status, thumbnail=None):
         '''
@@ -157,7 +158,7 @@ class YoutubeStuff:
 
             return playlists_data
         else:
-            return self.user
+            return self.url
 
     def getDefaultValues(self, playlist_id, item):
         if item != "thumbnail":

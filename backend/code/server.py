@@ -67,7 +67,7 @@ def authentication_handler(origin_app):
         spotify_user = SpotifyStuff()
       user = spotify_user
 
-    if not len(user):
+    if user == '':
       retries += 1
       authentication_handler(origin_app)
 
