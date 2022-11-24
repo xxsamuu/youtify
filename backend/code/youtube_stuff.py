@@ -10,27 +10,34 @@ from flask import redirect, jsonify
 
 from dotenv import load_dotenv
 
+from auth.authorize_youtube import Authorize
+
 import requests
 
 
 load_dotenv()
 
+authorize = Authorize(
+    scope=['https://www.googleapis.com/auth/youtube.force-ssl'],
+    token_file=r'C:\Users\samue\OneDrive\Documenti\youtify\backend\code\token.json', 
+    secrets_file=r'C:\Users\samue\OneDrive\Documenti\youtify\backend\code\client_secret.json',
+)
+
 class YoutubeStuff:
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        "backend\code\YOUR_CLIENT_SECRET_FILE.json", "https://www.googleapis.com/auth/youtube.force-ssl")
-    def __init__(self):
+    def __init__(self, status, auth_code):
         #create a user when getting access to their account
-        self.user = googleapiclient.discovery.build(
-            "youtube", "v3", credentials=self.flow.run_local_server())
-        self.url = self.flow.authorization_url()
+        self.status = status
+        self.auth_code = auth_code
+        self.user = authorize.authorize(auth_code=self.auth_code)
+        
 
-    def createPlaylist(self, title, description, status, thumbnail=None):
+    def createPlaylist(self, title, description, thumbnail=None):
         '''
         Automatically creates a playlist on users youtube, after getting permission via authorization pop-up.
         Default title should be the spotify playlist's one, but give possibility to change it manually
         '''
-        status.get_status("creating playlist...")
+        self.status.get_status("creating playlist...")
         makeRequest = self.user.playlists().insert(
             part="snippet,status, id",
             body={
@@ -67,15 +74,15 @@ class YoutubeStuff:
 
 
         
-    def add_tracks(self, playlist_id, tracks_names, status):
-        status.get_status("kindly note that probable inefficency in matching the \ntracks might be due to APIs, and has nothing to do with the program itself.")
+    def add_tracks(self, playlist_id, tracks_names ):
+        self.status.get_status("kindly note that probable inefficency in matching the \ntracks might be due to APIs, and has nothing to do with the program itself.")
         time.sleep(2)
         video_data = []
         try:
             for i, track in enumerate(tracks_names):
-                track_id= self.get_yt_id(track, status)
+                track_id= self.get_yt_id(track, self.status)
                 if track_id:
-                    status.get_status(f"adding {track} to playlist... ")
+                    self.status.get_status(f"adding {track} to playlist... ")
                     request = self.user.playlistItems().insert(
                         part="snippet",
                         body={
@@ -98,13 +105,13 @@ class YoutubeStuff:
                         "videoId": videos_id
                     })
                 else:
-                    status.error_msg(f"cannot find the youtube video of {track}!", False)
+                    self.status.error_msg(f"cannot find the youtube video of {track}!", False)
                     continue
-            status.get_status("")
+            self.status.get_status("")
             return video_data
 
         except:
-            status.error_msg("cannot add tracks to playlist", True)
+            self.status.error_msg("cannot add tracks to playlist", True)
             self.delete_playlist(playlist_id)
 
     
@@ -118,8 +125,8 @@ class YoutubeStuff:
         return 'playlist successfuly deleted'
 
 
-    def get_yt_id(self, song_name, status):
-        status.get_status(f"getting the youtube video of {song_name}...")
+    def get_yt_id(self, song_name):
+        self.status.get_status(f"getting the youtube video of {song_name}...")
         API_KEY = os.getenv('YOUTUBE_API_KEY')
         link = f"https://youtube.googleapis.com/youtube/v3/search?part=snippet&q={song_name}&topicId=/m/04rlf&key={API_KEY}&maxResults=1"
         res = requests.get(link)
@@ -131,31 +138,33 @@ class YoutubeStuff:
         else:
             return None
 
-    def get_yt_playlists(self, status):
-            request = self.user.playlists().list(
-                part="snippet, id",
-                maxResults=50,
-                mine=True
-            )
+    def get_playlists(self):
+        if not self.user:
+            self.status.get_status('please visit this url to grant us access: {}'.format(self.authorize.get_auth_link()))
+        request = self.user.playlists().list(
+            part="snippet, id",
+            maxResults=50,
+            mine=True
+        )
 
-            response = request.execute()
+        response = request.execute()
 
-            playlists_data = []
+        playlists_data = []
 
-            for i,playlist in enumerate(response["items"]):
-                status.get_status(f"getting playlists...({round((i/ len(response['items'])) * 100)}%)")
-                data = {
-                    "playlist_name": playlist["snippet"]["title"],
-                    "playlist_url": f"https://www.youtube.com/playlist?list={playlist['id']}",
-                    "id": playlist["id"],
-                    "image": playlist["snippet"]["thumbnails"]["default"]["url"]
-                }
-                if data["image"] == '[]':
-                    pass
-                else:
-                    playlists_data.append(data)
+        for i,playlist in enumerate(response["items"]):
+            self.status.get_status(f"getting playlists...({round((i/ len(response['items'])) * 100)}%)")
+            data = {
+                "playlist_name": playlist["snippet"]["title"],
+                "playlist_url": f"https://www.youtube.com/playlist?list={playlist['id']}",
+                "id": playlist["id"],
+                "image": playlist["snippet"]["thumbnails"]["default"]["url"]
+            }
+            if data["image"] == '[]':
+                pass
+            else:
+                playlists_data.append(data)
 
-            return playlists_data
+        return playlists_data
 
     def getDefaultValues(self, playlist_id, item):
         if item != "thumbnail":
@@ -182,4 +191,4 @@ class YoutubeStuff:
         else:
             return 404
 
-        
+    

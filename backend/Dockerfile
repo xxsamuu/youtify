@@ -22,7 +22,10 @@ RUN pip install gevent
 RUN pip install flask-cli
 RUN sudo apt install gunicorn3 --yes
 COPY venv_for_linux /youtify/backend/venv_for_linux
-COPY ./code/.env .env
+COPY ./code/.env ./.env
+RUN ls
 COPY . .
 
-CMD ["gunicorn", "-b", ":5000" , "--chdir", "./code" ,  "run:app"]
+
+CMD [ "python", "./code/server.py" ]
+#CMD ["gunicorn", "-b", ":5000" , "--chdir", "./code" ,  "run:app"]

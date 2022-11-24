@@ -1,5 +1,7 @@
-from flask import Flask, jsonify, request
+from operator import imod
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
+from pyparsing import original_text_for
 from youtube_stuff import YoutubeStuff
 
 from spotify__stuff import SpotifyStuff
@@ -9,20 +11,28 @@ from get_status import GetStatus
 from flask import Response
 
 
-app = Flask('__name__', static_folder='./frontend/build', static_url_path='')
+app = Flask(__name__)
+app.secret_key = "usbdvsdkfvjskdfbvervrb34t'234tni34lfw4gub"
+
 cors = CORS(app)
 
 status = GetStatus()
 
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-youtube_user = ''
-spotify_user = ''
+tries = 0
+
+
+@app.route('/', methods=['GET'])
+@cross_origin()
+def homepage():
+  return 'homepage'
 
 @app.route("/api/hello", methods=['GET', 'POST'])
 @cross_origin()
 def hello():
   return 'hello'
+
 
 @app.route('/api/main',methods=['GET', 'POST'])
 @cross_origin()
@@ -50,33 +60,14 @@ def main():
     return 'user not authenticated'
 
 
-def authentication_handler(origin_app):
+def authentication_handler(origin_app, auth_code):
   user = ''
-  retries = 0
-
-  if retries <= 3:
-    if origin_app == 'youtube':
-      global youtube_user
-      if youtube_user == '':
-        youtube_user = YoutubeStuff()
-      user = youtube_user
-
-    else:
-      global spotify_user
-      if spotify_user == '':
-        spotify_user = SpotifyStuff()
-      user = spotify_user
-
-    if user == '':
-      retries += 1
-      authentication_handler(origin_app)
-
-    status.get_status("authenticated successfully!")
-    return user
-
+  if origin_app == 'youtube':
+    user =  YoutubeStuff(status, auth_code)
   else:
-    status.error_msg("having some trouble authenticating.", True)
-    return None
+    user = SpotifyStuff(status)
+  return user
+
 
 
 def convert_handler(data, user):
@@ -85,18 +76,14 @@ def convert_handler(data, user):
   tracks to playlist. Returns informations about the playlist and the
   tracks in it.
   '''
-  global youtube_user
   tracks_name = []
-  #for checking if items submitted are empty. If they are, search for the default ones.
+  #for checking if params submitted in frontend form are empty (playlist name, playlist description...). If they are, search for the default ones.
   checked_data = getDefault(data)
   title = checked_data['name']
   description = checked_data['description']
   thumbnail = data['thumbnail']
   playlist = user.createPlaylist(title, description, status, thumbnail[23:])
-  if data['originApp'] == 'spotify':
-    tracks_name = SpotifyStuff.get_tracks_name(data['playlistLink'])
-  else:
-    tracks_name = youtube_user.get_tracks_name(data['playlistLink'])
+  tracks_name = user.get_tracks_name(data['playlistLink'])
   if playlist != None:
     add_tracks = user.add_tracks(playlist['id'], tracks_name, status)
     playlist['items'] = add_tracks
@@ -111,24 +98,13 @@ def getDefault(data):
   values except for thumbnail, as in youtube it cannot be set.
   '''
   dataChecked = {}
-  global youtube_user
-  global spotify_user
 
-  user = ''
-
-  if data['originApp'] == 'spotify':
-    user = spotify_user
-  else:
-    user = youtube_user
+  user = authentication_handler(data['originApp'])
 
   for item in data:
     if not data[item]:
       status.get_status(f"getting the default value of {item}...")
-      default = ''
-      if data['originApp'] == 'spotify':
-        default = SpotifyStuff.getDefaultValues(data['playlistLink'], item)
-      else:
-        default = youtube_user.getDefaultValues(data['playlistLink'], item)
+      default = user.getDefaultValues(data['playlistLink'], item)
       dataChecked[item] = default
     elif data[item]:
         dataChecked[item] = data[item]
@@ -139,23 +115,13 @@ def getDefault(data):
 @cross_origin()
 def check_validity():
   """
-  based on origin, it sends request to method to search for that playlist throughout its API,
-  returning 200 if has matching result and 404 if not.
+  takes as params from client-side link and originApp, and based on them it make a request to their APIs,
+  returning 200 if playlist exists and 404 if not.
   """
   data = request.get_json(force=True)
-  link = data['playlistLink']
-  origin = data['originApp']
-  val = ''
-  if origin == 'spotify':
-    spotify_user = SpotifyStuff()
-    val = spotify_user.check_validity(link)
-  else:
-    global youtube_user
-    if youtube_user == '':
-      youtube_user = YoutubeStuff()
-    val = youtube_user.check_validity(link)
+  user = authentication_handler(data['originApp'])
+  val = user.check_validity(data['playlistLink'])
   return Response(status=val)
-
 
 
 @app.route('/api/get-status', methods=['GET', 'POST'])
@@ -171,22 +137,25 @@ def get_status():
     }
   })
 
-@app.route('/api/getplaylists-spotify',methods=['GET','POST'])
-@cross_origin()
-def authenticate_spotify():
-  status.get_status("getting user's data...")
-  spotify_user = authentication_handler('spotify')
-  data = spotify_user.get_users_playlists(status)
-  return jsonify(data)
 
-@app.route('/api/getplaylists-youtube', methods=['GET', 'POST'])
+@app.route('/api/getplaylists-<app_name>', methods=['GET', 'POST'])
 @cross_origin()
-def authenticate_youtube():
-  status.get_status("getting youtube playlists...")
-  youtube_user = authentication_handler("youtube")
-  data = youtube_user.get_yt_playlists(status)
-  return jsonify(data)
+def get_playlist(app_name):
+  auth_code = ''
+  if app_name == 'youtube':
+    auth_code = request.args.get('code')
+  print('inside backend function lev 1', auth_code)
+  if not auth_code:
+    #if frontend has not POST the auth_code, user has not guaranted access. User not authorized.
+    return Response(status=401)
+  else:
+    user = authentication_handler(app_name, auth_code)
+    playlists = user.get_playlists()
+    return jsonify(playlists)
+ 
+
 
 if __name__ == "__main__":
    app.run(host='0.0.0.0')
 
+ 

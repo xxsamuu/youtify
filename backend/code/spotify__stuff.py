@@ -17,6 +17,7 @@ load_dotenv()
 
         
 class SpotifyStuff:
+    SpotifyOAuth
     try:
         os.environ['SPOTIPY_CLIENT_ID'] = os.getenv('SPOTIPY_CLIENT_ID')
         os.environ['SPOTIPY_CLIENT_SECRET'] = os.getenv('SPOTIPY_CLIENT_SECRET')
@@ -30,17 +31,18 @@ class SpotifyStuff:
     )
 
 
-    def __init__(self):
+    def __init__(self, status):
         #create a user when getting access to their account
         self.user = spotipy.Spotify(auth_manager=self.auth)
+        self.status = status
 
 
-    def get_users_playlists(self, status):
+    def get_playlists(self):
         if self.user:
             playlists = self.user.current_user_playlists(50)
             data = []
             for i, playlist in enumerate(playlists['items']):
-                status.get_status(f"getting playlists...({round((i / len(playlists['items'])) * 100)}%)")
+                self.status.get_status(f"getting playlists...({round((i / len(playlists['items'])) * 100)}%)")
                 playlist_id = playlist['id']
                 playlist_data = {
                     "playlist_name": playlist['name'],
@@ -53,7 +55,7 @@ class SpotifyStuff:
                     continue
                 else:
                     data.append(playlist_data)
-            status.get_status("")
+            self.status.get_status("")
             return data
         else:
             return self.user
