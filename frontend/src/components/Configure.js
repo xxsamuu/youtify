@@ -1,4 +1,4 @@
-import React, { useState, useRef, useContext } from "react";
+import React, { useState, useRef, useContext, useEffect } from "react";
 import * as imageConversion from "image-conversion";
 import { Context } from "../Context";
 
@@ -17,7 +17,8 @@ const Configure = ({
 
   var intervalId;
 
-  async function createPlaylist() {
+  const createPlaylist = () => {
+    console.log("createPlaylist fn");
     /*
     POST to API users customized data. In the backend, if those are blank, they will be set with their original values.
     getStatus() function calls API each one second to retrieve status of converting process.
@@ -25,17 +26,18 @@ const Configure = ({
     intervalId = setInterval(() => {
       getStatus();
     }, 1000);
-    fetch("https://youtify-api.onrender.com/api/main", {
+    console.log("playlist id: ", playlistLink);
+    fetch("/api/main", {
       method: "POST",
       body: JSON.stringify({
         name,
         description,
         originApp,
-        playlistLink,
+        playlistLink: playlistLink,
         thumbnail,
       }),
       headers: {
-        "Content-type": "application/json; charset=UFT-8",
+        "Content-type": "application/json",
       },
     })
       .then((res) => res.json())
@@ -49,10 +51,13 @@ const Configure = ({
         clearInterval(intervalId);
         setisLoading(false);
       });
-  }
+    console.log(
+      `posted data: ${name}, ${description}, ${originApp}, ${playlistLink}`
+    );
+  };
 
   async function getStatus() {
-    fetch("https://youtify-api.onrender.com/api/get-status")
+    fetch("/api/get-status")
       .then((res) => res.json())
       .then((data) => {
         setmessage(data.msg);
@@ -75,6 +80,7 @@ const Configure = ({
     e.preventDefault();
     setisLoading(true);
     if (e.target.value !== null) {
+      console.log("here we are");
       createPlaylist();
       setconfigure(false);
     } else {

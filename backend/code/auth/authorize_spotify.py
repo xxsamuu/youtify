@@ -1,12 +1,13 @@
 import base64
-from json import dump, load
+from json import dump, load, loads, JSONDecodeError
 from os import chmod, getenv
+import os
 from pathlib import Path
 from typing import List
 
-import json
-
 from requests import JSONDecodeError, request
+
+from spotipy.oauth2 import SpotifyClientCredentials
 
 import requests
 
@@ -14,12 +15,13 @@ import dotenv
 
 import spotipy
 
+from spotipy.exceptions import SpotifyException
+
 dotenv.load_dotenv()
 
 class Authorize:
     def __init__(
         self, 
-        auth_code, 
         scope: List[str], 
         token_file: Path,
         redirect_uri
@@ -34,7 +36,6 @@ class Authorize:
             token_file: full path of the file in which access token and refresh token will be stored.
             redirect_uri:the registered redirect_uri. Must match the one in Spotify Dashboard.
         """
-        self.auth_code = auth_code
         self.scope=scope
         self.token_file: Path = token_file
         self.session=None
@@ -42,13 +43,14 @@ class Authorize:
         self.client_id=getenv('SPOTIPY_CLIENT_ID')
         self.client_secret=getenv('SPOTIPY_CLIENT_SECRET')
         self.redirect_uri=redirect_uri
+        self.auth_manager = SpotifyClientCredentials()
 
     def load_token(self):
-        try:
-            with open(self.token_file, 'r') as file:
+        with open(self.token_file, 'r') as file:
+            try:
                 token = load(file)
-        except (JSONDecodeError, IOError):
-            return None
+            except:
+                return None
         return token
 
     def save_token(self, token):
@@ -56,29 +58,90 @@ class Authorize:
             dump(token, file)
         chmod(self.token_file, 0o600)
 
-    def authorize(self):
-        token = self.load_token
-
-        if token:
-            print('spotify token found, starting session...')
-            user = spotipy.Spotify(auth=token)
-            return user
-        
-        else:
-            print('token not found, requesting one...')
-            requests.post
+    def get_new_token(self, auth_code):
+        print('getting refresh token...')
+        encoded = base64.b64encode((self.client_id + ":" + self.client_secret).encode("ascii")).decode()
+        try:
+            refresh_token = self.load_token()['refresh_token']
+            print(refresh_token)
             req = request(
                 method="POST", 
                 url="https://accounts.spotify.com/api/token", 
-                headers={'Authorization': 'Basic' + f"{base64.encode(self.client_id)}:{base64.encode(self.client_secret)}"}, 
-                json={
-                    "code":self.auth_code,
+                headers={
+                    "Authorization": 'Basic ' + encoded ,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }, 
+                data={
+                    "refresh_token":refresh_token,
+                    "grant_type":'refresh_token'
+                }
+            )      
+            token = req.json()['access_token']  
+            self.save_token(req.json())
+            return token
+        except:
+            '''
+            a "KeyError" is raised for the refresh_token variable;
+            it means that token has been refreshed once and new token file doesnt contain 
+            another refresh token. 
+            Deletes text in json file and ask for another token with refresh token.
+            '''
+            with open(self.token_file, 'w') as f:
+                f.truncate(0)
+                self.new_session(auth_code)
+        
+    def new_session(self, auth_code):
+        if auth_code:
+            print('token not found, requesting one...')
+
+            encoded = base64.b64encode((self.client_id + ":" + self.client_secret).encode("ascii")).decode()
+
+
+            req = request(
+                method="POST", 
+                url="https://accounts.spotify.com/api/token", 
+                headers={
+                    "Authorization": 'Basic ' + encoded ,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }, 
+                data={
+                    "code":auth_code,
                     "redirect_uri":self.redirect_uri,
                     "grant_type":'authorization_code'
                 }
             )
-            print(req.status_code)
-            if req.status_code == 200:
-                print(f">>>Success!! token: {json.loads(req.json())['access_token'] }")
-            else:
-                print(f"error!")
+
+            token = ''
+
+            self.save_token(req.json())
+
+            try:
+                token = req.json()['access_token']
+            except:
+                #if it raises am error. it means that access_token has expired.
+                token = self.get_new_token(auth_code)
+
+            service = spotipy.Spotify(auth=token, auth_manager=self.auth_manager)
+
+            return service
+        else:
+            #user needs to re-authenticated
+            print('auth_code not supplied.') 
+            return 
+
+
+    def authorize(self, auth_code): 
+        token = self.load_token()
+
+        try:
+            if token:
+                print('token found!')
+                user = spotipy.Spotify(auth=token['access_token'], auth_manager=self.auth_manager)
+                return user
+        except:
+            print('token expired, getting access token...')
+            token = self.get_new_token()
+            user = spotipy.Spotify(auth=token, auth_manager=self.auth_manager)
+        
+        else:
+           self.new_session(auth_code)

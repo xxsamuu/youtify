@@ -19,8 +19,8 @@ load_dotenv()
 
 authorize = Authorize(
     scope=['https://www.googleapis.com/auth/youtube.force-ssl'],
-    token_file=r'C:\Users\samue\OneDrive\Documenti\youtify\backend\code\token.json', 
-    secrets_file=r'C:\Users\samue\OneDrive\Documenti\youtify\backend\code\client_secret.json',
+    token_file=r'C:\Users\samue\youtify\backend\code\tokens\token.json', 
+    secrets_file=r'C:\Users\samue\youtify\backend\code\client_secret.json',
 )
 
 class YoutubeStuff:
@@ -74,47 +74,59 @@ class YoutubeStuff:
 
 
         
-    def add_tracks(self, playlist_id, tracks_names ):
+    def add_tracks(self, playlist_id, tracks_name ):
+        print(tracks_name)
         self.status.get_status("kindly note that probable inefficency in matching the \ntracks might be due to APIs, and has nothing to do with the program itself.")
         time.sleep(2)
         video_data = []
-        try:
-            for i, track in enumerate(tracks_names):
-                track_id= self.get_yt_id(track, self.status)
-                if track_id:
-                    self.status.get_status(f"adding {track} to playlist... ")
-                    request = self.user.playlistItems().insert(
-                        part="snippet",
-                        body={
-                        "snippet": {
-                            "playlistId": playlist_id,
-                            "resourceId": {
-                            "kind": "youtube#video",
-                            "videoId": track_id
-                            }
-                            },
+        for track in tracks_name:
+            track_id= self.get_yt_id(track)
+            print(track, track_id)
+            if track_id:
+                self.status.get_status(f"adding {track} to playlist... ")
+                request = self.user.playlistItems().insert(
+                    part="snippet",
+                    body={
+                    "snippet": {
+                        "playlistId": playlist_id,
+                        "resourceId": {
+                        "kind": "youtube#video",
+                        "videoId": track_id
+                        }
                         },
-                    )
-                    response = request.execute()
+                    },
+                )
+                response = request.execute()
 
-                    videos_title = response['snippet']['title']
-                    videos_id = response['id']
+                videos_title = response['snippet']['title']
+                videos_id = response['id']
 
-                    video_data.append({
-                        "videoTitle": videos_title,
-                        "videoId": videos_id
-                    })
-                else:
-                    self.status.error_msg(f"cannot find the youtube video of {track}!", False)
-                    continue
+                video_data.append({
+                    "videoTitle": videos_title,
+                    "videoId": videos_id
+                })
+            else:
+                print('couldnt find the video of ', track)
+                self.status.error_msg(f"cannot find the youtube video of {track}!", False)
+                continue
             self.status.get_status("")
-            return video_data
+        return video_data
 
+    def get_yt_id(self, song_name):
+        request = self.user.search().list(
+            part='snippet',
+            maxResults=1,
+            q=song_name,
+            topicId="10"
+        )
+        response = request.execute()
+        self.status.get_status(f"getting the youtube video of {song_name}...")
+        try:
+            id = response['items'][0]["id"]["videoId"]
+            return id
         except:
-            self.status.error_msg("cannot add tracks to playlist", True)
-            self.delete_playlist(playlist_id)
+            return None
 
-    
     def delete_playlist(self, playlist_id):
         request = self.user.playlists().delete(
             id=playlist_id
@@ -124,19 +136,6 @@ class YoutubeStuff:
 
         return 'playlist successfuly deleted'
 
-
-    def get_yt_id(self, song_name):
-        self.status.get_status(f"getting the youtube video of {song_name}...")
-        API_KEY = os.getenv('YOUTUBE_API_KEY')
-        link = f"https://youtube.googleapis.com/youtube/v3/search?part=snippet&q={song_name}&topicId=/m/04rlf&key={API_KEY}&maxResults=1"
-        res = requests.get(link)
-        data = res.json()
-        if res.status_code == 200:
-            items = data['items'][0]
-            video_id = items['id']['videoId']
-            return video_id
-        else:
-            return None
 
     def get_playlists(self):
         if not self.user:
@@ -174,8 +173,9 @@ class YoutubeStuff:
                 part="snippet",
                 id=playlist_id
             )
-
+            print(playlist_id, item)
             response = request.execute()
+            print(response)
             return response["items"][0]["snippet"][item]
         else:
             return None

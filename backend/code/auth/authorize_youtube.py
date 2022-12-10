@@ -105,25 +105,18 @@ class Authorize:
 
         if token:
             print('token found. Starting Session...')
-            #ft_token = requests_oauthlib.OAuth2Session.fetch_token()
             credentials = google.oauth2.credentials.Credentials(
                 token['access_token'],
                 refresh_token=token['refresh_token'],
                 token_uri=self.token_uri, #
                 client_id=self.client_id, #
                 client_secret = self.client_secret, #
-                scopes = self.token_uri
+                scopes = self.scope
             )
             service = googleapiclient.discovery.build('youtube', 'v3', credentials=credentials)
         
             return service
-            '''self.session = OAuth2Session(
-                self.client_id,
-                token=token,
-                auto_refresh_url=self.token_uri,
-                auto_refresh_kwargs=self.extra,
-                token_updater=self.save_token,
-            )'''
+
         else:
             data = {
                 'code': auth_code,
@@ -134,7 +127,7 @@ class Authorize:
                 'scopes': self.scope
             }
             res = requests.post('https://oauth2.googleapis.com/token', data=data).json()
-
+            print(res)
             oauth2_token = {
                 "access_token": res['access_token'],
                 "refresh_token": res['refresh_token'],

@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router";
 import banner from "./images/banner.png";
-const Welcome = () => {
+const Welcome = ({ setisGreeted, isGreeted }) => {
   let navigate = useNavigate();
+  useEffect(() => {
+    if (JSON.parse(sessionStorage.getItem("isGreeted")) === true) {
+      setisGreeted(true);
+    }
+  }, []);
   return (
     <div className="welcome-wrapper">
       <img src={banner} className="banner-img" />
@@ -14,8 +19,8 @@ const Welcome = () => {
       <div className="button-wrapper">
         <button
           onClick={() => {
-            navigate("../", { replace: true });
-            JSON.stringify(sessionStorage.setItem("welcome", true));
+            setisGreeted(true);
+            sessionStorage.setItem("isGreeted", true);
           }}
         >
           Get started

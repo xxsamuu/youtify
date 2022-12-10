@@ -18,6 +18,7 @@ function App() {
   const [isLoading, setisLoading] = useState();
   const [error, seterror] = useState();
   const [success, setsuccess] = useState();
+  const [isGreeted, setisGreeted] = useState(false);
 
   useEffect(() => {
     if (isLoading == false) {
@@ -35,21 +36,24 @@ function App() {
           <Nav />
           <div className="not-navs">
             <Routes>
-              <Route path="/welcome" element={<Welcome />} />
               <Route
                 path="/"
                 element={
                   <IsLoading
                     isLoading={isLoading}
                     Page={
-                      <Mainpage
-                        setisLoading={setisLoading}
-                        isLoading={isLoading}
-                        error={error}
-                        seterror={seterror}
-                        setsuccess={setsuccess}
-                        success={setsuccess}
-                      />
+                      isGreeted ? (
+                        <Mainpage
+                          setisLoading={setisLoading}
+                          isLoading={isLoading}
+                          error={error}
+                          seterror={seterror}
+                          setsuccess={setsuccess}
+                          success={setsuccess}
+                        />
+                      ) : (
+                        <Welcome setisGreeted={setisGreeted} />
+                      )
                     }
                   />
                 }

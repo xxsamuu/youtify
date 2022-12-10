@@ -6,12 +6,6 @@ import logo from "../images/logo.svg";
 
 const Nav = ({ opacity }) => {
   const { isLoggedIn, setisLoggedIn } = useContext(Context);
-  let navigate = useNavigate();
-  useEffect(() => {
-    if (JSON.parse(sessionStorage.getItem("spotifyData")) === null) {
-      navigate("../welcome", { replace: true });
-    }
-  }, []);
 
   return (
     <div className="nav-wrapper" style={opacity}>
