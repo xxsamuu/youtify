@@ -2,5 +2,5 @@
 
 .env
 ./config/
-/code/client_secret.json
+/backend/code/client_secret.json
 /venv_for_linux
