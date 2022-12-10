@@ -16,6 +16,9 @@ import dotenv
 import spotipy
 
 from spotipy.exceptions import SpotifyException
+from spotipy.oauth2 import SpotifyOauthError
+
+from requests import HTTPError
 
 dotenv.load_dotenv()
 
@@ -57,6 +60,13 @@ class Authorize:
         with open(self.token_file, 'w') as file:
             dump(token, file)
         chmod(self.token_file, 0o600)
+
+    def check_token_validity(self, token):
+        try:
+            spotipy.Spotify(auth=token, auth_manager=self.auth_manager)
+            return 200
+        except:
+            return 401
 
     def get_new_token(self, auth_code):
         print('getting refresh token...')
@@ -131,17 +141,24 @@ class Authorize:
 
 
     def authorize(self, auth_code): 
-        token = self.load_token()
-
+        load_token = self.load_token()
+        token_is_valid = self.check_token_validity(load_token)
         try:
-            if token:
-                print('token found!')
-                user = spotipy.Spotify(auth=token['access_token'], auth_manager=self.auth_manager)
-                return user
-        except:
+            if token_is_valid == 200:
+                try:
+                    print('token found!')
+                    user = spotipy.Spotify(auth=token['access_token'], auth_manager=self.auth_manager)
+                    return user
+                except:
+                    print('token expired')
+                    token = self.get_new_token(auth_code)
+                    user = spotipy.Spotify(auth=token, auth_manager=self.auth_manager)
+                    return user     
+        except (SpotifyOauthError, HTTPError):
             print('token expired, getting access token...')
             token = self.get_new_token()
             user = spotipy.Spotify(auth=token, auth_manager=self.auth_manager)
+            return user
         
         else:
            self.new_session(auth_code)

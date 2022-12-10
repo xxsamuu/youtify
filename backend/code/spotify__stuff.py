@@ -72,7 +72,7 @@ class SpotifyStuff:
                 return data
             except:
                 self.user = self.authorize.authorize(self.auth_code)
-                self.get_playlists()
+                return self.get_playlists()
 
 
 
@@ -155,7 +155,7 @@ class SpotifyStuff:
             return array_names
         except SpotifyException:
             self.user = self.authorize.authorize(self.auth_code)
-            self.get_tracks_name(link)
+            return self.get_tracks_name(link)
 
 
     def getDefaultValues(self, link, item):
@@ -165,7 +165,7 @@ class SpotifyStuff:
                 default =  self.user.playlist(link)[item]
             except:
                 self.user = self.authorize.authorize(self.auth_code)
-                self.getDefaultValues(link, item)
+                return self.getDefaultValues(link, item)
             return default
         else:
             #if item searched for is the thumbnail. Thumbnail in youtube playlists
