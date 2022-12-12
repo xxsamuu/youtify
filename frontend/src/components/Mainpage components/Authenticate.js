@@ -16,7 +16,6 @@ const Authenticate = ({ inputRef, seterror, error, setisLoading }) => {
   const [isAuthenticated, setisAuthenticated] = useState(false);
   const [getStatusInterval, setgetStatusInterval] = useState();
   const [playlistData, setplaylistData] = useState([]);
-  const [user, setuser] = useState();
   const [spotifyData, setspotifyData] = useState([]);
   const [youtubeData, setyoutubeData] = useState([]);
   const [statusCode, setstatusCode] = useState();

@@ -510,3 +510,8 @@ select {
   border-radius: 10px;
   padding: 15px 20px;
 }
+
+.error-wrapper {
+  position: fixed;
+  bottom: 5px;
+}

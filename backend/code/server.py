@@ -140,6 +140,7 @@ def check_validity():
 @app.route('/api/get-status', methods=['GET'])
 @cross_origin()
 def get_status():
+  status.error_msg("", False)
   return jsonify({
     "msg": status.msg,
     "error_data":{
@@ -190,18 +191,21 @@ def clear_previous_state(obj):
 def login(app_name):
   code = ''
   state = clear_previous_state(login_status)
-  p = ['code', 'access_token']
   if app_name.lower() not in allowed_origin_apps or app_name == '':
     state.login_status('invalid URL bro', status_code=404)
 
-  if not [request.args.get(x) for x in p]:
+  if not request.args.get("code"):
     #if frontend has not POST the auth_code, return bad request error
     state.login_status('need to POST auth_code first', status_code=401)
   else:
-    code = request.args.get('code')
-    authentication_handler(app_name, code)
-    state.login_status('user successfully logged in', status_code=200)
-      
+    try:
+      code = request.args.get("code")
+      authentication_handler(app_name, code)
+      redirect("http://localhost:3000/")
+      state.login_status('user successfully logged in', status_code=200)
+    except:
+      state.login_status("had an error", status_code=500)
+      return Response("had an error while trying to log user", status=500)
   return jsonify({
     "data": state.msg,
     "status_code": state.status_code
@@ -224,7 +228,7 @@ def get_playlist(app_name):
 
       return jsonify(playlists)
     except:
-      status.error_msg('sorry about that. You may need to retry.', True)
+      status.error_msg('sorry about that. You may need to retry.', False)
       return Response('sorry about that. You may need to retry.', 500)
 
 
